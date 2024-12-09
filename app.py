@@ -18,14 +18,18 @@ my_dbs = fetch_dbs(mongo_client)
 
 first_db = next(iter(my_dbs))
 last_db_collection = {first_db:my_dbs[first_db][0]}
+filter_key_value = None
 
 @app.route('/', methods = ['GET'])
 def home():
     global last_db_collection
+    global filter_key
     if request.method == 'GET':
         db = list(last_db_collection)[0]
         collection = last_db_collection[db]
 
+        if filter_key_value:
+            documents = mongo_client[db][collection].find({},{})
         documents = mongo_client[db][collection].find()
         documents_list = list(documents)
         
