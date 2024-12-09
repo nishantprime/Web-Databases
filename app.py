@@ -1,4 +1,5 @@
 from flask import Flask
+from helper import mongo_client
 
 app = Flask(__name__)
 
@@ -12,3 +13,5 @@ def fetch_dbs(mongo_client):
     for db in dbs:
         db_collections[db] = mongo_client[db].list_collection_names()
     return db_collections
+
+my_dbs = fetch_dbs(mongo_client)
