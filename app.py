@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, session
 from helper import mongo_client
 
 app = Flask(__name__)
@@ -34,3 +34,7 @@ def home():
         documents_list = list(documents)
         
         return documents_list
+
+@app.route('/delete<>', methods = ['DELETE'])
+def delete_document(id):
+    
