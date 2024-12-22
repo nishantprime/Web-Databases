@@ -43,7 +43,7 @@ def home():
     documents = mongo_client[db][collection].find()
     documents_list = list(documents)
     
-    return render_template('database.html', db_collection_map=db_collection_map, db=db, collection=collection, documents=documents_list)
+    return render_template('database.html', db_collection_map=db_collection_map, selected_db=db, selected_collection=collection, documents=documents_list)
 
 @app.route('/delete/<string:document_id>', methods = ['DELETE'])
 def delete_document(document_id):
