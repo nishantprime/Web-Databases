@@ -35,7 +35,7 @@ def home():
     if request.method == 'POST':
         db, collection = request.form.get('db_collection').split('/')
 
-        if db in selected_db_collection and collection in selected_db_collection[db]:
+        if db in db_collection_map and collection in db_collection_map[db]:
             session['selected_db_collection'] = f'{db}/{collection}'
         else:
             session['selected_db_collection'] = f"{default_db}/{default_collection}"
