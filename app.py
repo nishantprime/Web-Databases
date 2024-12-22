@@ -21,10 +21,8 @@ def fetch_dbs(mongo_client):
 
 db_collection_map = fetch_dbs(mongo_client)
 
-default_db = 'chat'
-#{next(iter(db_collection_map))}
-default_collection = 'log'
-#{list(db_collection_map[default_db])[0]}
+default_db = next(iter(db_collection_map))
+default_collection = db_collection_map[default_db][0]
 
 @app.route('/', methods = ['GET', 'POST'])
 def home():
