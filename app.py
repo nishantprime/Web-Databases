@@ -29,7 +29,7 @@ default_collection = 'log'
 @app.route('/', methods = ['GET'])
 def home():
         
-    if selected_db_collection not in session:
+    if 'selected_db_collection' not in session:
         session['selected_db_collection'] = f"{default_db}/{default_collection}"
 
     if request.method == 'POST':
