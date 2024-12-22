@@ -1,7 +1,12 @@
-from flask import Flask, request, session
+from flask import Flask, request, session, render_template, jsonify
 from helper import mongo_client
+from json import Object_Id
+import os
 
 app = Flask(__name__)
+app.secret_key = 'top_secret_key'
+
+password = os.getenv('password')
 
 def fetch_dbs(mongo_client): 
     db_collections = {}
@@ -14,27 +19,39 @@ def fetch_dbs(mongo_client):
         db_collections[db] = mongo_client[db].list_collection_names()
     return db_collections
 
-my_dbs = fetch_dbs(mongo_client)
+db_collection_map = fetch_dbs(mongo_client)
 
-first_db = next(iter(my_dbs))
-last_db_collection = {first_db:my_dbs[first_db][0]}
-filter_key_value = None
+default_db = {next(iter(db_collections_map))}
+default_collection = {db_collections_map[default_db][0]}
 
 @app.route('/', methods = ['GET'])
 def home():
-    global last_db_collection
-    global filter_key
-    if request.method == 'GET':
-        db = list(last_db_collection)[0]
-        collection = last_db_collection[db]
-
-        if filter_key_value:
-            documents = mongo_client[db][collection].find({},{})
-        documents = mongo_client[db][collection].find()
-        documents_list = list(documents)
         
-        return documents_list
+    if selected_db_collection not in session:
+        session['selected_db_collection'] = f"{default_db}/{default_collection}"
 
-@app.route('/delete<>', methods = ['DELETE'])
-def delete_document(id):
+    if request.method == 'POST':
+        db, collection = request.form.get('db_collection').split('/')
+
+        if db in selected_db_collection and collection in selected_db_collection[db]:
+            session['selected_db_collection'] = f'{db}/{collection}'
+        else:
+            session['selected_db_collection'] = f"{default_db}/{default_collection}"
+            
+    db, collection = session['selected_db_collection'].split('/')
+        
+    documents = mongo_client[db][collection].find()
+    documents_list = list(documents)
     
+    return render_template('database.html', db_collection_map=db_collection_map, db=db, collection=collection, documents=documents_list)
+
+@app.route('/delete/<string:document_id>', methods = ['DELETE'])
+def delete_document(document_id):
+    document_object_id = ObjectId(document_id)
+    
+    db, collection = session['selected_db_collection'].split('/')
+    mongo_client[db][collection].delete_one({'_id':document_object_id})
+    return jsonify({'success':True})
+
+if __name__ == '__main__':
+    app.run(debug=True)
