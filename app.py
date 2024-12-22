@@ -1,6 +1,6 @@
 from flask import Flask, request, session, render_template, jsonify
 from helper.database import mongo_client
-from json import ObjectId
+from bson import ObjectId
 import os
 
 app = Flask(__name__)
