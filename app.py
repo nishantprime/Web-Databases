@@ -26,7 +26,7 @@ default_db = 'chat'
 default_collection = 'log'
 #{list(db_collection_map[default_db])[0]}
 
-@app.route('/', methods = ['GET'])
+@app.route('/', methods = ['GET', 'POST'])
 def home():
         
     if 'selected_db_collection' not in session:
