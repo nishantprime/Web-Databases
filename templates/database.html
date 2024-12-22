@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entries</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        .collection-dropdown, .delete-button {
+            margin-bottom: 10px;
+        }
+        .delete-button {
+            background-color: #ff4444;
+            color: #fff;
+            border: none;
+            padding: 5px;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-left: 10px;
+        }
+        .entry-container {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            padding: 10px;
+        }
+        .entry-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .entry-details {
+            margin-left: 30px;
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .entry-item {
+            margin-right: 10px;
+            white-space: nowrap;
+        }
+        .key {
+            color: #3366cc;
+        }
+    </style>
+</head>
+<body>
+    <h1>Database</h1>
+    <form method="post">
+        <label for="db_collection">Select Database/Collection:</label>
+        <select name="db_collection" id="db_collection" class="collection-dropdown" onchange="this.form.submit()">
+            {% for db, collections in db_collection_map.items() %}
+                {% for collection in collections %}
+                    <option value="{{ db }}/{{ collection }}" {% if selected_db == db and selected_collection == collection %}selected{% endif %}>{{ db }} / {{ collection }}</option>
+                {% endfor %}
+            {% endfor %}
+        </select>
+    </form>
+
+    <ul id="entries-list">
+        {% for entry in documents %}
+            <li id="entry-{{ entry['_id'] }}">
+                <div class="entry-container">
+                    <div class="entry-header">
+                        <strong>Entry {{ loop.index }}:</strong>
+                        <button class="delete-button" onclick="deleteDoc('{{ entry['_id'] }}')">Delete</button>
+                    </div>
+                    <div class="entry-details">
+                        {% for key, value in entry.items() %}
+                            {% if key != '_id' %}
+                                <div class="entry-item"><span class="key"><strong>{{ key }}:</strong></span> {{ value }}</div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </li>
+        {% endfor %}
+    </ul>
+    <script>
+        function deleteDoc(entryId) {
+            fetch(`/delete/${entryId}`, {
+                method: 'DELETE'
+            }).then(response => response.json()).then(data => {
+                if (data.success) {
+                    document.getElementById(`entry-${entryId}`).remove();
+                } else {
+                    alert('Failed to delete entry.');
+                }
+            });
+        }
+    </script>
+</body>
+</html>
