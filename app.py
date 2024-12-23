@@ -29,8 +29,8 @@ default_collection = db_collection_map[default_db][0]
 @app.route('/', methods = ['GET', 'POST'])
 def home():
 
-    if 'password' not in session or time.time() - session['last_login'] > login_timeout :
-        session['password'] = None
+    if 'password' not in session :
+        session['last_login'] = None
         return '''<!DOCTYPE html>
                 <html>
                 <head>
@@ -44,6 +44,9 @@ def home():
                     </form>
                 </body>
                 </html>'''
+    if 'last_login' in session and time.time() - session['last_login'] > login_timeout:
+        session['password'] = None
+        return 'session timed out'
         
     if 'selected_db_collection' not in session:
         session['selected_db_collection'] = f"{default_db}/{default_collection}"
