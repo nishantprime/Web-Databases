@@ -29,7 +29,7 @@ default_collection = db_collection_map[default_db][0]
 @app.route('/', methods = ['GET', 'POST'])
 def home():
 
-    if not session['password'] or if time.time() - session['last_login'] > login_timeout :
+    if not session['password'] or time.time() - session['last_login'] > login_timeout :
         session['password'] = None
         return '''<!DOCTYPE html>
                 <html>
