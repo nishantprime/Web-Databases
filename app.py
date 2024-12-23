@@ -58,15 +58,11 @@ def login():
 
 @app.route('/', methods = ['GET', 'POST'])
 def home():
-    if 'password' not in session :
-        session['last_login'] = None
+    if 'password' not in session or 'last_login' not in session:
         return redirect('/login')
     if 'last_login' in session and time.time() - session['last_login'] > login_timeout:
-        session['password'] = None
-        session['last_login'] = None
+        del session['password']
         return 'session timed out'
-    if 'last_login' not in session:
-        return redirect('/login')
         
     if 'selected_db_collection' not in session:
         session['selected_db_collection'] = f"{default_db}/{default_collection}"
