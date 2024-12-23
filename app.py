@@ -1,12 +1,14 @@
-from flask import Flask, request, session, render_template, jsonify
+from flask import Flask, request, session, render_template, jsonify, redirect
 from helper.database import mongo_client
 from bson import ObjectId
+import time
 import os
 
 app = Flask(__name__)
-app.secret_key = 'top_secret_key'
+app.secret_key = os.urandom(16)
 
 password = os.getenv('password')
+login_timeout = 20
 
 def fetch_dbs(mongo_client): 
     db_collections = {}
@@ -26,11 +28,33 @@ default_collection = db_collection_map[default_db][0]
 
 @app.route('/', methods = ['GET', 'POST'])
 def home():
+
+    if not session['password'] or if time.time() - session['last_login'] > login_timeout :
+        session['password'] = None
+        return '''<!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Login</title>
+                </head>
+                <body>
+                    <form method="POST">
+                        <label for="password">Password:</label>
+                        <input type="password" id="password" name="password"><br><br>
+                        <input type="submit" value="Submit">
+                    </form>
+                </body>
+                </html>'''
         
     if 'selected_db_collection' not in session:
         session['selected_db_collection'] = f"{default_db}/{default_collection}"
 
     if request.method == 'POST':
+        if 'password' in request.form :
+            if request.form['password'] == password:
+                session['password'] = password
+                session['last_login'] = time.time()
+            return redirect('/')
+
         db, collection = request.form.get('db_collection').split('/')
 
         if db in db_collection_map and collection in db_collection_map[db]:
