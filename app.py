@@ -8,7 +8,7 @@ app = Flask(__name__)
 app.secret_key = os.urandom(16)
 
 password = os.getenv('password')
-login_timeout = 20
+login_timeout = 300
 
 def fetch_dbs(mongo_client): 
     db_collections = {}
