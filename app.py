@@ -53,7 +53,9 @@ def home():
             if request.form['password'] == password:
                 session['password'] = password
                 session['last_login'] = time.time()
-            return redirect('/')
+                return redirect('/')
+            else:
+                return 'invalid password'
 
         db, collection = request.form.get('db_collection').split('/')
 
