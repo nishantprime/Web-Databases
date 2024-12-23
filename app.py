@@ -26,12 +26,11 @@ db_collection_map = fetch_dbs(mongo_client)
 default_db = next(iter(db_collection_map))
 default_collection = db_collection_map[default_db][0]
 
-@app.route('/', methods = ['GET', 'POST'])
-def home():
 
-    if 'password' not in session :
-        session['last_login'] = None
-        return '''<!DOCTYPE html>
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'GET':
+        return """<!DOCTYPE html>
                 <html>
                 <head>
                     <title>Login</title>
@@ -43,7 +42,25 @@ def home():
                         <input type="submit" value="Submit">
                     </form>
                 </body>
-                </html>'''
+                </html>"""
+    elif request.method == 'POST': # Use elif here!
+        if 'password' in request.form:
+            if request.form['password'] == password:
+                session['password'] = password
+                session['last_login'] = time.time()
+                return redirect('/')
+            else:
+                return 'invalid password'
+        else: # Handle the case when the password is not in the form
+            return "No password provided"
+    return "Something went wrong" # fallback return
+
+
+@app.route('/', methods = ['GET', 'POST'])
+def home():
+    if 'password' not in session :
+        session['last_login'] = None
+        return redirect('/login')
     if 'last_login' in session and time.time() - session['last_login'] > login_timeout:
         session['password'] = None
         return 'session timed out'
@@ -52,14 +69,6 @@ def home():
         session['selected_db_collection'] = f"{default_db}/{default_collection}"
 
     if request.method == 'POST':
-        if 'password' in request.form :
-            if request.form['password'] == password:
-                session['password'] = password
-                session['last_login'] = time.time()
-                return redirect('/')
-            else:
-                return 'invalid password'
-
         db, collection = request.form.get('db_collection').split('/')
 
         if db in db_collection_map and collection in db_collection_map[db]:
