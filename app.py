@@ -63,7 +63,10 @@ def home():
         return redirect('/login')
     if 'last_login' in session and time.time() - session['last_login'] > login_timeout:
         session['password'] = None
+        session['last_login'] = None
         return 'session timed out'
+    if 'last_login' not in session:
+        return redirect('/login')
         
     if 'selected_db_collection' not in session:
         session['selected_db_collection'] = f"{default_db}/{default_collection}"
