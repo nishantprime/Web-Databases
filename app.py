@@ -87,8 +87,15 @@ def home():
         
     documents = mongo_client[db][collection].find()
     documents_list = list(documents)
+
+    processed_documents_list = []
+    for doc in documents_list:
+        processed_doc = dict(doc)
+        if '_id' in processed_doc and isinstance(processed_doc['_id'], ObjectId):
+            processed_doc['_id'] = str(processed_doc['_id']) # Convert ObjectId to string
+        processed_documents_list.append(processed_doc)
     
-    return render_template('database.html', db_collection_map=db_collection_map, selected_db=db, selected_collection=collection, documents=documents_list)
+    return render_template('database.html', db_collection_map=db_collection_map, selected_db=db, selected_collection=collection, documents=processed_documents_list)
 
 @app.route('/delete/<string:document_id>', methods = ['DELETE'])
 def delete_document(document_id):
