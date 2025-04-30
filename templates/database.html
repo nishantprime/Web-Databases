@@ -127,7 +127,6 @@
         <form method="post" style="display: flex; align-items: center; flex-grow: 1;">
             <label for="db_collection" style="margin-right: 10px; white-space: nowrap;">Select DB/Collection:</label>
             <select name="db_collection" id="db_collection" class="collection-dropdown" onchange="this.form.submit()">
-                 {# Use your original option format #}
                 {% for db, collections in db_collection_map.items() %}
                     {% for collection in collections %}
                         <option value="{{ db }}/{{ collection }}" {% if selected_db == db and selected_collection == collection %}selected{% endif %}>
@@ -135,26 +134,14 @@
                         </option>
                     {% endfor %}
                 {% endfor %}
-                 {# Handle error/empty states in dropdown #}
-                 {% if not db_collection_map or "error" in db_collection_map or "<No Databases Found>" in db_collection_map %}
-                      <option value="{{ selected_db }}/{{ selected_collection }}" selected disabled>{{ selected_db }} / {{ selected_collection }}</option>
-                 {% endif %}
             </select>
-             {# Add a submit button only visible if JavaScript is disabled #}
-             <noscript><input type="submit" value="Load" class="submit-btn"></noscript>
         </form>
 
-        {# Action buttons grouped with controls #}
         {# Conditional Download Button #}
         {% if selected_db not in ["error", "<No Databases Found>", "<None>"] and selected_collection not in ["<Error accessing collections>", "<No Collections>", "<None>"] %}
             <a href="{{ url_for('download_collection', db_name=selected_db, collection_name=selected_collection) }}" class="action-button">Download {{ selected_collection }} (JSON)</a>
         {% endif %}
     </div>
-
-    {# Display potential fetch errors #}
-    {% if fetch_error %}
-        <p class="error">{{ fetch_error }}</p>
-    {% endif %}
 
     {# --- Entries List --- #}
     <ul id="entries-list">
@@ -162,8 +149,7 @@
             <li id="entry-{{ entry['_id'] }}">
                 <div class="entry-container">
                     <div class="entry-header">
-                        {# Displaying _id might be useful #}
-                        <strong>ID: {{ entry['_id'] }}</strong>
+                        <strong>Entry {{ loop.index }}:</strong>
                         <button class="delete-button" onclick="deleteDoc('{{ entry['_id'] }}')">Delete</button>
                     </div>
                     <div class="entry-details">
@@ -180,61 +166,22 @@
                     </div>
                 </div>
             </li>
-        {% else %}
-             {# Message when no documents are found/fetched #}
-              <li>
-                 <div class="entry-container" style="text-align: center; color: #666;">
-                     {% if selected_db in ["error", "<No Databases Found>", "<None>"] or selected_collection in ["<Error accessing collections>", "<No Collections>", "<None>"] %}
-                          Select a valid database and collection to view documents.
-                     {% else %}
-                          No documents found in this collection.
-                     {% endif %}
-                 </div>
-             </li>
         {% endfor %}
     </ul>
 
     {# --- JavaScript for Delete --- #}
     <script>
         function deleteDoc(entryId) {
-            // Use confirm for safety
-            if (!confirm('Are you sure you want to delete entry ' + entryId + '?')) {
-                return;
-            }
 
             fetch(`/delete/${entryId}`, {
                 method: 'DELETE'
-            })
-            .then(response => {
-                // Check if response is ok (status code 200-299)
-                if (!response.ok) {
-                    // Try to parse error from JSON, otherwise use status text
-                    return response.json().then(errData => {
-                         throw new Error(errData.error || `Request failed with status ${response.status}`);
-                    }).catch(() => { // Catch if parsing json fails too
-                         throw new Error(`Request failed with status ${response.status}`);
-                    });
-                }
-                return response.json(); // Parse JSON body if response is ok
-            })
-            .then(data => {
+            }).then(response => response.json()).then(data => {
                 if (data.success) {
-                    const elementToRemove = document.getElementById(`entry-${entryId}`);
-                    if (elementToRemove) {
-                        elementToRemove.remove();
-                         // Optional: Add a temporary success message or update a counter
-                    } else {
-                         // Should not happen if delete was successful, but good to handle
-                         alert('Entry deleted, but could not find the item to remove from the page. Please refresh.');
-                    }
+                    document.getElementById(`entry-${entryId}`).remove();
                 } else {
                     // Handle errors reported in the JSON payload even if status was 2xx
                     alert('Failed to delete entry: ' + (data.error || 'Unknown error from server.'));
                 }
-            })
-            .catch(error => {
-                console.error('Error during delete:', error);
-                alert('Failed to delete entry. Network error or server issue: ' + error.message);
             });
         }
     </script>
