@@ -145,8 +145,6 @@
         </form>
 
         {# Action buttons grouped with controls #}
-        <a href="{{ url_for('refresh_dbs') }}" class="action-button">Refresh List</a>
-
         {# Conditional Download Button #}
         {% if selected_db not in ["error", "<No Databases Found>", "<None>"] and selected_collection not in ["<Error accessing collections>", "<No Collections>", "<None>"] %}
             <a href="{{ url_for('download_collection', db_name=selected_db, collection_name=selected_collection) }}" class="action-button">Download {{ selected_collection }} (JSON)</a>
