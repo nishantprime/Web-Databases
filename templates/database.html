@@ -3,95 +3,240 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Entries</title>
+    <title>Database Viewer - {{ selected_db }}/{{ selected_collection }}</title> {# Dynamic Title #}
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
+            background-color: #f4f7f6; /* Slightly off-white background */
+            color: #333;
         }
         h1 {
             text-align: center;
+            color: #4a4a4a;
         }
-        .collection-dropdown, .delete-button {
-            margin-bottom: 10px;
+        .controls {
+            display: flex; /* Align items horizontally */
+            align-items: center; /* Center items vertically */
+            gap: 15px; /* Space between items */
+            margin-bottom: 20px; /* Space below controls */
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+            padding: 10px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .collection-dropdown {
+             padding: 8px 10px;
+             border: 1px solid #ccc;
+             border-radius: 4px;
+             background-color: #fff;
+             flex-grow: 1; /* Allow dropdown to take available space */
+             min-width: 200px; /* Minimum width */
+        }
+        .action-button { /* Style for Refresh and Download links */
+            display: inline-block;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #e9e9e9;
+            color: #333;
+            text-decoration: none;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .action-button:hover {
+            background-color: #dcdcdc;
         }
         .delete-button {
             background-color: #ff4444;
             color: #fff;
             border: none;
-            padding: 5px;
+            padding: 6px 10px; /* Slightly adjusted padding */
             cursor: pointer;
-            border-radius: 5px;
-            margin-left: 10px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            transition: background-color 0.2s ease;
+        }
+        .delete-button:hover {
+            background-color: #e60000;
         }
         .entry-container {
             border: 1px solid #ddd;
             border-radius: 5px;
-            margin-bottom: 10px;
-            padding: 10px;
+            margin-bottom: 15px; /* Increased spacing */
+            padding: 15px; /* Increased padding */
+            background-color: #fff; /* White background for entries */
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
         .entry-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 5px;
+            margin-bottom: 10px; /* More space below header */
+            padding-bottom: 5px;
+            border-bottom: 1px solid #eee; /* Separator line */
+        }
+        .entry-header strong {
+             color: #555;
         }
         .entry-details {
-            margin-left: 30px;
-            display: flex;
-            flex-wrap: wrap;
+            /* Removed flex here, let items flow naturally */
+            margin-left: 10px; /* Smaller indent */
         }
         .entry-item {
-            margin-right: 10px;
-            white-space: nowrap;
+            margin-bottom: 8px; /* Space between key-value pairs */
+            word-wrap: break-word; /* Allow long values to wrap */
         }
         .key {
-            color: #3366cc;
+            color: #0056b3; /* Darker blue for key */
+            font-weight: bold; /* Make key bold */
+            margin-right: 5px;
         }
+        .error {
+            color: #dc3545; /* Bootstrap danger color */
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        ul {
+            list-style-type: none; /* Remove default list bullets */
+            padding: 0;
+        }
+        li {
+            /* No specific li style needed now container has margin */
+        }
+        noscript .submit-btn { /* Show submit only if JS is disabled */
+             display: inline-block;
+             margin-left: 10px;
+        }
+         .submit-btn {
+             display: none; /* Hide submit button by default (using onchange) */
+         }
+
     </style>
 </head>
 <body>
-    <h1>Database</h1>
-    <form method="post">
-        <label for="db_collection">Select Database/Collection:</label>
-        <select name="db_collection" id="db_collection" class="collection-dropdown" onchange="this.form.submit()">
-            {% for db, collections in db_collection_map.items() %}
-                {% for collection in collections %}
-                    <option value="{{ db }}/{{ collection }}" {% if selected_db == db and selected_collection == collection %}selected{% endif %}>{{ db }} / {{ collection }}</option>
-                {% endfor %}
-            {% endfor %}
-        </select>
-    </form>
+    <h1>MongoDB Viewer</h1>
 
+    {# --- Controls Section --- #}
+    <div class="controls">
+        <form method="post" style="display: flex; align-items: center; flex-grow: 1;">
+            <label for="db_collection" style="margin-right: 10px; white-space: nowrap;">Select DB/Collection:</label>
+            <select name="db_collection" id="db_collection" class="collection-dropdown" onchange="this.form.submit()">
+                 {# Use your original option format #}
+                {% for db, collections in db_collection_map.items() %}
+                    {% for collection in collections %}
+                        <option value="{{ db }}/{{ collection }}" {% if selected_db == db and selected_collection == collection %}selected{% endif %}>
+                             {{ db }} / {{ collection }}
+                        </option>
+                    {% endfor %}
+                {% endfor %}
+                 {# Handle error/empty states in dropdown #}
+                 {% if not db_collection_map or "error" in db_collection_map or "<No Databases Found>" in db_collection_map %}
+                      <option value="{{ selected_db }}/{{ selected_collection }}" selected disabled>{{ selected_db }} / {{ selected_collection }}</option>
+                 {% endif %}
+            </select>
+             {# Add a submit button only visible if JavaScript is disabled #}
+             <noscript><input type="submit" value="Load" class="submit-btn"></noscript>
+        </form>
+
+        {# Action buttons grouped with controls #}
+        <a href="{{ url_for('refresh_dbs') }}" class="action-button">Refresh List</a>
+
+        {# Conditional Download Button #}
+        {% if selected_db not in ["error", "<No Databases Found>", "<None>"] and selected_collection not in ["<Error accessing collections>", "<No Collections>", "<None>"] %}
+            <a href="{{ url_for('download_collection', db_name=selected_db, collection_name=selected_collection) }}" class="action-button">Download {{ selected_collection }} (JSON)</a>
+        {% endif %}
+    </div>
+
+    {# Display potential fetch errors #}
+    {% if fetch_error %}
+        <p class="error">{{ fetch_error }}</p>
+    {% endif %}
+
+    {# --- Entries List --- #}
     <ul id="entries-list">
         {% for entry in documents %}
             <li id="entry-{{ entry['_id'] }}">
                 <div class="entry-container">
                     <div class="entry-header">
-                        <strong>Entry {{ loop.index }}:</strong>
+                        {# Displaying _id might be useful #}
+                        <strong>ID: {{ entry['_id'] }}</strong>
                         <button class="delete-button" onclick="deleteDoc('{{ entry['_id'] }}')">Delete</button>
                     </div>
                     <div class="entry-details">
                         {% for key, value in entry.items() %}
-                            {% if key != '_id' %}
-                                <div class="entry-item"><span class="key"><strong>{{ key }}:</strong></span> {{ value }}</div>
-                            {% endif %}
+                            {# Optionally skip _id if shown in header, or show all #}
+                            {# {% if key != '_id' %} #}
+                                <div class="entry-item">
+                                    <span class="key">{{ key }}:</span>
+                                    {# Render value appropriately - simple for now #}
+                                    <span>{{ value | tojson }}</span> {# Use tojson for better representation of types like lists/dicts #}
+                                </div>
+                            {# {% endif %} #}
                         {% endfor %}
                     </div>
                 </div>
             </li>
+        {% else %}
+             {# Message when no documents are found/fetched #}
+              <li>
+                 <div class="entry-container" style="text-align: center; color: #666;">
+                     {% if selected_db in ["error", "<No Databases Found>", "<None>"] or selected_collection in ["<Error accessing collections>", "<No Collections>", "<None>"] %}
+                          Select a valid database and collection to view documents.
+                     {% else %}
+                          No documents found in this collection.
+                     {% endif %}
+                 </div>
+             </li>
         {% endfor %}
     </ul>
+
+    {# --- JavaScript for Delete --- #}
     <script>
         function deleteDoc(entryId) {
+            // Use confirm for safety
+            if (!confirm('Are you sure you want to delete entry ' + entryId + '?')) {
+                return;
+            }
+
             fetch(`/delete/${entryId}`, {
                 method: 'DELETE'
-            }).then(response => response.json()).then(data => {
-                if (data.success) {
-                    document.getElementById(`entry-${entryId}`).remove();
-                } else {
-                    alert('Failed to delete entry.');
+            })
+            .then(response => {
+                // Check if response is ok (status code 200-299)
+                if (!response.ok) {
+                    // Try to parse error from JSON, otherwise use status text
+                    return response.json().then(errData => {
+                         throw new Error(errData.error || `Request failed with status ${response.status}`);
+                    }).catch(() => { // Catch if parsing json fails too
+                         throw new Error(`Request failed with status ${response.status}`);
+                    });
                 }
+                return response.json(); // Parse JSON body if response is ok
+            })
+            .then(data => {
+                if (data.success) {
+                    const elementToRemove = document.getElementById(`entry-${entryId}`);
+                    if (elementToRemove) {
+                        elementToRemove.remove();
+                         // Optional: Add a temporary success message or update a counter
+                    } else {
+                         // Should not happen if delete was successful, but good to handle
+                         alert('Entry deleted, but could not find the item to remove from the page. Please refresh.');
+                    }
+                } else {
+                    // Handle errors reported in the JSON payload even if status was 2xx
+                    alert('Failed to delete entry: ' + (data.error || 'Unknown error from server.'));
+                }
+            })
+            .catch(error => {
+                console.error('Error during delete:', error);
+                alert('Failed to delete entry. Network error or server issue: ' + error.message);
             });
         }
     </script>
