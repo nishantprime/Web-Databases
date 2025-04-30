@@ -1,8 +1,10 @@
 from flask import Flask, request, session, render_template, jsonify, redirect
-from helper.database import mongo_client
+import pymongo
+import os
 from bson import ObjectId
 import time
-import os
+
+mongo_client = pymongo.MongoClient(os.getenv('mongodb'))
 
 app = Flask(__name__)
 app.secret_key = os.urandom(16)
